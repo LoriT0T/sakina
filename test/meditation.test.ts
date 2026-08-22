@@ -126,3 +126,28 @@ test('a brace inside a line does not confuse the walk', async () => {
   assert.equal(got.length, 1);
   assert.equal(got[0].text, 'A line with a } brace and a " quote.');
 });
+
+/**
+ * Silence is the practice, but it is not unbounded. Filling a short meditation's budget by
+ * scaling every gap put two thirty-second silences back to back in a five-minute sit — a full
+ * minute of digital silence with no bed under it, which reads as the audio having stopped.
+ */
+test('no single silence runs past the cap for its guidance setting', async () => {
+  const { planMeditationChunks, buildMeditationTimeline } = await import('@/lib/meditation/plan');
+  const lines: Line[] = [
+    ...Array.from({ length: 3 }, (_, i) => line(`Arrival line ${i}.`, 'arrival')),
+    ...Array.from({ length: 6 }, (_, i) => line(`Notice the breath, ${i}.`, 'practice')),
+    ...Array.from({ length: 3 }, (_, i) => line(`Return line ${i}.`, 'return')),
+  ];
+  for (const [guidance, cap] of [['close', 12], ['normal', 20], ['spacious', 45]] as const) {
+    const chunks = planMeditationChunks({ lines, cycles: 1 }, guidance);
+    chunks.forEach((c, i) => (c.hashKey = `${c.section}:${i}`));
+    const { plays } = buildMeditationTimeline(chunks, 5, guidance);
+    const all = plays.flatMap((p) => p.pauses);
+    // The one deliberate exception is the closing silent sit, which absorbs what the cap
+    // leaves unspent and has its own ceiling.
+    const overCap = all.filter((p) => p > cap + 0.01);
+    assert.ok(overCap.length <= 1, `${guidance}: ${overCap.length} pauses over ${cap}s`);
+    assert.ok(Math.max(...all) <= 90.01, `${guidance}: longest ${Math.max(...all)}s`);
+  }
+});

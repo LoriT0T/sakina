@@ -56,6 +56,23 @@ export function isActionCue(text: string): boolean {
 export const GUIDANCE_MULTIPLIER = { close: 0.65, normal: 1, spacious: 1.5 } as const;
 export type Guidance = keyof typeof GUIDANCE_MULTIPLIER;
 
+/**
+ * The longest a single silence may run, per guidance setting.
+ *
+ * Silence is the practice, so it is allowed to be long — but not unbounded. Filling a short
+ * meditation's time budget by scaling every gap put two thirty-second silences back to back in
+ * a five-minute sit, measured as a full minute of digital silence with no bed under it. On a
+ * phone that reads as the audio having stopped.
+ *
+ * Anything the cap leaves unspent becomes one deliberate silent stretch at the end of the
+ * practice phase, which is what a real sit does anyway: the guidance thins out and then leaves
+ * you to it.
+ */
+const MAX_PAUSE_SEC = { close: 12, normal: 20, spacious: 45 } as const;
+
+/** And a ceiling on that closing stretch, so it is a silent sit rather than an abandonment. */
+const MAX_SILENT_SIT_SEC = 90;
+
 export function meditationPause(
   section: Section,
   t: number,
@@ -165,8 +182,11 @@ export interface MeditationPlay {
 export function buildMeditationTimeline(
   chunks: MeditationChunk[],
   minutes: number,
+  guidance: Guidance = 'normal',
 ): { plays: MeditationPlay[]; estimatedSec: number } {
   const plays: MeditationPlay[] = [];
+  const maxPause = MAX_PAUSE_SEC[guidance];
+  let unspent = 0;
 
   for (const spec of MEDITATION_ARC) {
     const inSection = chunks.filter((c) => c.section === spec.section);
@@ -183,7 +203,24 @@ export function buildMeditationTimeline(
     const scale = nominal > 0 ? Math.min(3, Math.max(0.5, (budget - speech) / nominal)) : 1;
 
     for (const chunk of inSection) {
-      plays.push({ chunk, pauses: chunk.pauses.map((p) => p * scale), cycle: 0 });
+      const pauses = chunk.pauses.map((p) => {
+        const wanted = p * scale;
+        const given = Math.min(wanted, maxPause);
+        unspent += wanted - given;
+        return given;
+      });
+      plays.push({ chunk, pauses, cycle: 0 });
+    }
+  }
+
+  // Hand the capped-off time back as one silent stretch at the end of the practice phase.
+  if (unspent > 1) {
+    const lastPractice = plays.map((p) => p.chunk.section).lastIndexOf('practice');
+    const target = lastPractice >= 0 ? plays[lastPractice] : plays[plays.length - 1];
+    if (target && target.pauses.length > 0) {
+      const i = target.pauses.length - 1;
+      const room = Math.max(0, MAX_SILENT_SIT_SEC - target.pauses[i]);
+      target.pauses[i] += Math.min(unspent, room);
     }
   }
 

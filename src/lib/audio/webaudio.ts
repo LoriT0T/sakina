@@ -341,6 +341,21 @@ export interface AssembleArgs {
    * Defaults to the affirmation arc.
    */
   arc?: SectionSpec[];
+  /**
+   * Whether the track descends.
+   *
+   * An affirmation track is listened to while falling asleep, so it tapers to -8 dB, ends in a
+   * 90-second fade, and has every minute after the fourth capped at the opening's loudest —
+   * nothing later may wake someone already asleep.
+   *
+   * A meditation is listened to awake and must stay audible to the last word. Applied to a
+   * five-minute sit, the affirmation descent faded the entire Return phase out: measured
+   * -19.6 dB and -25.0 dB in the last two half-minutes against -9.5 dB at the start, so
+   * "when you are ready, you can let your eyes open" was inaudible.
+   *
+   * Defaults to true, since the affirmation path is the one that needs it.
+   */
+  descend?: boolean;
   onProgress?: (message: string) => void;
 }
 
@@ -349,6 +364,9 @@ export async function assembleInBrowser(args: AssembleArgs): Promise<AssembledTr
   const say = args.onProgress ?? (() => {});
   const fs = ASSEMBLY_SAMPLE_RATE;
   const specs = args.arc ? new Map(args.arc.map((s) => [s.section, s])) : SECTION_SPEC;
+  const descend = args.descend ?? true;
+  // Without a descent there is still a fade, but only long enough to avoid a click at the end.
+  const fadeSec = descend ? FADE_SEC : 3;
   // Only the affirmation arc ends in a silent fade section; a meditation's Return phase is
   // spoken right to the end.
   const fadeShare = specs.get('fade')?.share ?? 0;
@@ -529,12 +547,12 @@ export async function assembleInBrowser(args: AssembleArgs): Promise<AssembledTr
   for (let i = 0; i < curvePoints; i++) {
     const t = (i / (curvePoints - 1)) * durationSec;
     let db = 0;
-    if (t > TAPER_START_SEC && durationSec > TAPER_START_SEC) {
+    if (descend && t > TAPER_START_SEC && durationSec > TAPER_START_SEC) {
       db = (-TAPER_DEPTH_DB * (t - TAPER_START_SEC)) / (durationSec - TAPER_START_SEC);
     }
     let gain = 10 ** (db / 20);
-    const fadeStart = durationSec - FADE_SEC;
-    if (t > fadeStart) gain *= Math.max(0, 1 - (t - fadeStart) / FADE_SEC);
+    const fadeStart = durationSec - fadeSec;
+    if (t > fadeStart) gain *= Math.max(0, 1 - (t - fadeStart) / fadeSec);
     curve[i] = gain;
   }
   master.gain.setValueCurveAtTime(curve, 0, durationSec);
@@ -561,7 +579,7 @@ export async function assembleInBrowser(args: AssembleArgs): Promise<AssembledTr
   const CAP_FROM_MINUTE = 4;
   const peaks = stats.windowPeakDb;
   const opening = peaks.slice(0, CAP_FROM_MINUTE + 1).filter(Number.isFinite);
-  if (opening.length > 0 && peaks.length > CAP_FROM_MINUTE + 1) {
+  if (descend && opening.length > 0 && peaks.length > CAP_FROM_MINUTE + 1) {
     const ceiling = Math.max(...opening);
     const minuteGainDb = peaks.map((p, i) =>
       i <= CAP_FROM_MINUTE || !Number.isFinite(p) ? 0 : Math.min(0, ceiling - p),

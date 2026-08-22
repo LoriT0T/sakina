@@ -106,7 +106,7 @@ export async function generateMeditation(
 
   const chunks = planMeditationChunks(script, guidance);
   chunks.forEach((c, i) => (c.hashKey = `${c.section}:${i}`));
-  const { plays } = buildMeditationTimeline(chunks, settings.minutes);
+  const { plays } = buildMeditationTimeline(chunks, settings.minutes, guidance);
 
   const audio = new Map<string, ChunkPcm>();
   let done = 0;
@@ -142,6 +142,9 @@ export async function generateMeditation(
     audio,
     settings,
     arc: MEDITATION_ARC,
+    // A meditation is listened to awake and has to stay audible to the last word. The
+    // exception is the sleep technique, whose whole point is that you do not hear the end.
+    descend: settings.technique === 'sleep',
     onProgress: (message) => onProgress({ phase: 'assemble', message, fraction: 0.8 }),
   });
 

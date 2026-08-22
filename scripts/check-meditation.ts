@@ -77,7 +77,7 @@ async function main() {
   const script: Script = { lines, cycles: 1 };
   const chunks = planMeditationChunks(script, guidance);
   chunks.forEach((c, i) => (c.hashKey = `${c.section}:${i}`));
-  const { plays, estimatedSec } = buildMeditationTimeline(chunks, minutes);
+  const { plays, estimatedSec } = buildMeditationTimeline(chunks, minutes, guidance);
 
   // Speech is estimated from word count at the measured rate for this voice; the point is the
   // ratio, not a to-the-second prediction.
