@@ -1,0 +1,198 @@
+@import 'tailwindcss';
+
+/*
+ * Sakina — سكينة, the stillness that settles on a heart.
+ *
+ * Nightscript was a bedtime object: near-black, no white anywhere, built for one hand in a dark
+ * room. This app is opened at fajr, in the middle of a working afternoon, and at midnight, so a
+ * single fixed palette cannot serve it. Two are defined here and the device decides.
+ *
+ * The warmth is deliberate. Mental-health software drifts towards clinical blue-grey, which
+ * reads as an instrument rather than a room. These are paper, sand and ink — quiet, but not cold.
+ */
+@theme {
+  /* Warm neutrals — the surfaces. */
+  --color-sand-50: #faf7f2;
+  --color-sand-100: #f3ede3;
+  --color-sand-200: #e7ddcd;
+  --color-sand-300: #d4c6b0;
+  --color-sand-400: #b3a58f;
+
+  /* Ink — the text. */
+  --color-ink-900: #1c1a17;
+  --color-ink-800: #2b2823;
+  --color-ink-700: #423d35;
+  --color-ink-600: #5d564b;
+  --color-ink-500: #7b7264;
+  --color-ink-400: #9a9081;
+  --color-ink-300: #b8afa0;
+
+  /* Night — the dark surfaces. */
+  --color-night-950: #0d0c0b;
+  --color-night-900: #141312;
+  --color-night-850: #1b1917;
+  --color-night-800: #232019;
+  --color-night-700: #322d25;
+  --color-night-600: #453f34;
+
+  /* One accent, used sparingly: a muted green that reads as "settled" rather than "success". */
+  --color-calm-600: #4e6b57;
+  --color-calm-500: #5f7f69;
+  --color-calm-400: #7d9a86;
+  --color-calm-300: #a3bcab;
+
+  --color-clay-500: #9a6b52;
+  --color-clay-400: #b58467;
+}
+
+/*
+ * Semantic tokens. Components only ever reference these, never a raw ramp value, so the two
+ * themes stay in step and a third would be a single block.
+ */
+:root {
+  --bg: #faf7f2;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f3ede3;
+  --border: #e7ddcd;
+  --border-strong: #d4c6b0;
+  --text: #1c1a17;
+  --text-muted: #5d564b;
+  --text-faint: #8b8172;
+  --accent: #4e6b57;
+  --accent-soft: #e6ede8;
+  --shadow: 0 1px 2px rgb(28 26 23 / 0.05), 0 8px 24px -12px rgb(28 26 23 / 0.12);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0d0c0b;
+    --bg-raised: #141312;
+    --bg-sunken: #090808;
+    --border: #232019;
+    --border-strong: #322d25;
+    --text: #e8e2d8;
+    --text-muted: #9a9081;
+    --text-faint: #6d6558;
+    --accent: #7d9a86;
+    --accent-soft: #1a201c;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d0c0b;
+  --bg-raised: #141312;
+  --bg-sunken: #090808;
+  --border: #232019;
+  --border-strong: #322d25;
+  --text: #e8e2d8;
+  --text-muted: #9a9081;
+  --text-faint: #6d6558;
+  --accent: #7d9a86;
+  --accent-soft: #1a201c;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+/*
+ * Night mode for the player only: the app may be in daylight theme while a track plays at 2am,
+ * and a bright surface then is a face full of light. Applied on the player route regardless of
+ * the rest of the app's theme.
+ */
+[data-surface='night'] {
+  --bg: #050506;
+  --bg-raised: #0a0a0c;
+  --bg-sunken: #000000;
+  --border: #16161a;
+  --border-strong: #26262c;
+  --text: #a8a8b0;
+  --text-muted: #71717c;
+  --text-faint: #55555f;
+  --accent: #7d9a86;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Room for the fixed nav bar on small screens. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Arabic needs a larger optical size and a font that actually has the glyphs. */
+.arabic {
+  font-family: 'SF Arabic', 'Geeza Pro', 'Noto Naskh Arabic', 'Traditional Arabic', serif;
+  font-size: 1.45em;
+  line-height: 2;
+  direction: rtl;
+  text-align: right;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Range inputs, themed once. */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 44px;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 3px;
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 26px;
+  width: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: -11.5px;
+}
+input[type='range']::-moz-range-track {
+  height: 3px;
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+input[type='range']::-moz-range-thumb {
+  height: 26px;
+  width: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* The player's dim-to-black. Long, so it is never perceived as an event. */
+.dimmable {
+  transition: opacity 2500ms ease-in-out;
+}
+.dimmed {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dimmable,
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

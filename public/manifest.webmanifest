@@ -1,0 +1,11 @@
+{
+  "name": "Sakina",
+  "short_name": "Sakina",
+  "description": "Prayer, meditation, affirmations and a journal, kept on your own device.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#4e6b57",
+  "icons": []
+}
