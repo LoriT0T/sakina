@@ -10,9 +10,16 @@ import { asset } from '@/lib/paths';
  * exist so the app is worth opening before you have generated anything, and so you can hear
  * what an hour of it is like without spending an API call.
  *
- * They stream from their URL rather than being copied into IndexedDB. Copying 17 MB of audio
- * into every visitor's storage to show them a sample would be rude, and the browser caches
- * the file anyway once it has been played.
+ * They stream from their URL rather than being copied into IndexedDB. Copying megabytes of
+ * audio into every visitor's storage to show them a sample would be rude, and the browser
+ * caches the file anyway once it has been played.
+ *
+ * Only one ships. The earlier ten- and fifteen-minute tracks were written in the process
+ * style, with the body-scan and scene-setting lines this app no longer produces, so keeping
+ * them would have been advertising output the app will not make. There is no meditation
+ * example for a duller reason: the assembler runs in the browser, and there is no honest way
+ * to commit a file it produced without duplicating it in the command-line renderer — which is
+ * exactly the divergence that caused the descent definition to drift once already.
  */
 
 export interface ExampleTrack {
@@ -48,40 +55,6 @@ export const EXAMPLES: ExampleTrack[] = [
     truePeakDb: -3.5,
     voice: 'Sulafat',
     madeAt: '2026-08-12',
-  },
-  {
-    id: 'dream-15min',
-    name: 'Four times a week — the body, the bike, the life',
-    file: 'dream-15min.m4a',
-    mime: 'audio/mp4',
-    durationSec: 930.3,
-    bytes: 3823105,
-    goals: [
-      'Get back to the gym four times a week and stay there',
-      'Get properly strong and build a body that looks like it trains',
-      'Build the life I am training for — the bike, the freedom, money I earned',
-    ],
-    lufs: -24.5,
-    truePeakDb: -3.5,
-    voice: 'Sulafat',
-    madeAt: '2026-08-11',
-  },
-  {
-    id: 'gym-10min',
-    name: 'Training — showing up, and the last few reps',
-    file: 'gym-10min.m4a',
-    mime: 'audio/mp4',
-    durationSec: 623.4,
-    bytes: 2555126,
-    goals: [
-      'Train consistently instead of going hard for two weeks then stopping',
-      'Push properly on the last few reps',
-      'Stop measuring my training against people who have been at it for years',
-    ],
-    lufs: -25.1,
-    truePeakDb: -3.5,
-    voice: 'Sulafat',
-    madeAt: '2026-08-11',
   },
 ];
 

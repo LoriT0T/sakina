@@ -138,6 +138,13 @@ Voice auditions (once; cached, so a re-run is free):
 npx tsx scripts/audition.ts
 ```
 
+Check the meditation writer, validator and planners against the live model without spending
+any TTS quota — this is what caught the truncated-JSON bug:
+
+```bash
+npx tsx scripts/check-meditation.ts --minutes 10 --technique breath
+```
+
 ---
 
 ## How the audio works
@@ -184,6 +191,31 @@ It is also not therapy, not medical advice, and not a crisis service.
 
 ---
 
+## Measured
+
+A real five-minute breath meditation, generated on the hosted app (2026-08-22):
+
+| | measured | target |
+|---|---|---|
+| duration | **5:00.1** | 5:00 |
+| integrated loudness | **−23.00 LUFS** | −23 |
+| true peak | **−9.75 dBTP** | under −3 |
+| level across the whole track | **3.1 dB spread**, first spoken −10.9, last −10.2 | flat — a meditation must stay audible to the last word |
+| longest single silence | **10 s** | under the 20 s cap for `normal` guidance |
+| silence share | ~60% of runtime | silence is the practice |
+| TTS requests | 4 | — |
+
+Affirmation gaps, after the tightening:
+
+| | before | after |
+|---|---|---|
+| mean gap between lines | 5.95 s | **3.65 s** (−39%) |
+| worst case | 10.7 s | **4.6 s** |
+
+The base schedule was about 40% too slow, but the worst case was the real complaint, and that
+came from `MAX_PAUSE_STRETCH` at 1.8 — a schedule can be right and still stretch half again on
+top of itself when the re-timing pass fills a section's budget. It is now 1.25.
+
 ## Known limits
 
 - **Storage is per-browser.** A track made on a laptop is not on the phone; clearing browser
@@ -200,3 +232,10 @@ It is also not therapy, not medical advice, and not a crisis service.
   sits, and is labelled as synthesized in the UI.
 - **Chunk size is a cache key.** Changing `CHUNK_TARGET_WORDS` invalidates every previously
   generated chunk.
+- **The command-line renderer does affirmations only.** It assembles with ffmpeg while the app
+  assembles with Web Audio, and teaching it meditations would mean maintaining the arc, the
+  descent rule and the pause caps in two places. That divergence has already bitten once — the
+  two renderers disagreed about what "descending" meant — so the CLI is left as an affirmation
+  tool and the app is the only thing that makes meditations.
+- **One shipped example, not three.** The earlier ten- and fifteen-minute tracks were written
+  in the process style, with body-scan lines the app no longer produces.
