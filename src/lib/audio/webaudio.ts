@@ -417,7 +417,20 @@ export async function assembleInBrowser(args: AssembleArgs): Promise<AssembledTr
     const regions = findSpeechRegions(float, fs);
     const fellBack = regions.length !== chunk.lineCount;
     if (fellBack) splitFallbacks++;
-    const use = fellBack ? [{ start: 0, end: float.length }] : regions;
+    /**
+     * A miscount is not a reason to throw away the boundaries that were found.
+     *
+     * This used to collapse to a single segment whenever the region count missed, which put
+     * the chunk's entire planned silence after it as one gap. Measured on a five-minute
+     * meditation: a 78-second unbroken silence at 1:46, from four planned twenty-second
+     * pauses landing on top of each other.
+     *
+     * Step 2 below already spreads a chunk's silence budget across however many segments
+     * actually exist, so keeping three regions out of five degrades gracefully — the line
+     * boundaries are approximate but the silence is still distributed. Only a detector that
+     * found nothing to work with falls back to the whole chunk.
+     */
+    const use = regions.length >= 2 ? regions : [{ start: 0, end: float.length }];
     split.set(key, {
       segments: use.map((r) => float.subarray(r.start, r.end)),
       durations: use.map((r) => (r.end - r.start) / fs),
