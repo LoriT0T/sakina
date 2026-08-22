@@ -331,6 +331,39 @@ function makeBed(kind: TrackSettings['bed'], samples: number): Float32Array {
 // Assembly
 // ---------------------------------------------------------------------------
 
+/**
+ * The master level curve, one point per second.
+ *
+ * Lifted out of the render so it can be checked directly. Whether the last minute of a track
+ * is audible is a property of this arithmetic, and re-rendering five minutes of audio to find
+ * out is both slow and, as it turned out, easy to do against a stale bundle.
+ *
+ * With `descend`, the shape is the affirmation one: flat until 4:00, then linear-in-dB down to
+ * -8 dB by the end, then a 90-second fade to silence. Without it the curve is flat, and the
+ * only movement is a short fade at the very end to avoid a click.
+ */
+export function levelCurve(durationSec: number, descend: boolean, fadeSec: number): Float32Array {
+  const points = Math.max(2, Math.round(durationSec));
+  const curve = new Float32Array(points);
+  for (let i = 0; i < points; i++) {
+    const t = (i / (points - 1)) * durationSec;
+    let db = 0;
+    if (descend && t > TAPER_START_SEC && durationSec > TAPER_START_SEC) {
+      db = (-TAPER_DEPTH_DB * (t - TAPER_START_SEC)) / (durationSec - TAPER_START_SEC);
+    }
+    let gain = 10 ** (db / 20);
+    const fadeStart = durationSec - fadeSec;
+    if (t > fadeStart) gain *= Math.max(0, 1 - (t - fadeStart) / fadeSec);
+    curve[i] = gain;
+  }
+  return curve;
+}
+
+/** The fade a track ends on: long and deliberate when it descends, just anti-click when not. */
+export function fadeSecondsFor(descend: boolean): number {
+  return descend ? FADE_SEC : 3;
+}
+
 export interface AssembleArgs {
   plays: Play[];
   audio: Map<string, ChunkPcm>;
@@ -366,7 +399,7 @@ export async function assembleInBrowser(args: AssembleArgs): Promise<AssembledTr
   const specs = args.arc ? new Map(args.arc.map((s) => [s.section, s])) : SECTION_SPEC;
   const descend = args.descend ?? true;
   // Without a descent there is still a fade, but only long enough to avoid a click at the end.
-  const fadeSec = descend ? FADE_SEC : 3;
+  const fadeSec = fadeSecondsFor(descend);
   // Only the affirmation arc ends in a silent fade section; a meditation's Return phase is
   // spoken right to the end.
   const fadeShare = specs.get('fade')?.share ?? 0;
@@ -539,22 +572,8 @@ export async function assembleInBrowser(args: AssembleArgs): Promise<AssembledTr
     bedSrc.start(0);
   }
 
-  // Guaranteed descent: flat until 4:00, then linear-in-dB to -6 dB, then the 90 s fade to
-  // silence. Applied as a sampled curve so it is exact rather than approximated by ramps.
   const durationSec = totalSamples / fs;
-  const curvePoints = Math.max(2, Math.round(durationSec));
-  const curve = new Float32Array(curvePoints);
-  for (let i = 0; i < curvePoints; i++) {
-    const t = (i / (curvePoints - 1)) * durationSec;
-    let db = 0;
-    if (descend && t > TAPER_START_SEC && durationSec > TAPER_START_SEC) {
-      db = (-TAPER_DEPTH_DB * (t - TAPER_START_SEC)) / (durationSec - TAPER_START_SEC);
-    }
-    let gain = 10 ** (db / 20);
-    const fadeStart = durationSec - fadeSec;
-    if (t > fadeStart) gain *= Math.max(0, 1 - (t - fadeStart) / fadeSec);
-    curve[i] = gain;
-  }
+  const curve = levelCurve(durationSec, descend, fadeSec);
   master.gain.setValueCurveAtTime(curve, 0, durationSec);
   master.connect(ctx.destination);
   voiceSrc.start(0);
