@@ -1,3 +1,4 @@
+import { readLines } from '@/lib/gemini/json';
 import type { Intake, Line, MeditationTechnique, Section } from '@/lib/types';
 import { meditationLineCounts, type Guidance } from './plan';
 
@@ -142,15 +143,7 @@ Return ONLY a JSON object, no prose, no markdown fences:
 
 /** Parse the writer's JSON into lines. Tolerant of fences and stray prose. */
 export function parseMeditationJson(raw: string, section: Section): Line[] {
-  let s = raw.trim();
-  const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(s);
-  if (fence) s = fence[1].trim();
-  const start = s.indexOf('{');
-  const end = s.lastIndexOf('}');
-  if (start >= 0 && end > start) s = s.slice(start, end + 1);
-
-  const parsed = JSON.parse(s) as { lines?: Array<{ text?: unknown }> };
-  return (parsed.lines ?? [])
+  return readLines(raw)
     .map((l, i): Line | null => {
       const text = typeof l.text === 'string' ? l.text.trim() : '';
       if (!text) return null;

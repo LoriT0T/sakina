@@ -97,3 +97,32 @@ test('the arc has no fade section — a meditation is spoken to the end', () => 
   assert.equal(MEDITATION_ARC.some((s) => s.section === 'fade'), false);
   assert.equal(Math.abs(MEDITATION_ARC.reduce((a, s) => a + s.share, 0) - 1) < 1e-9, true);
 });
+
+/**
+ * Truncation salvage. The model hit its output limit mid-object on a real ten-minute practice
+ * phase, and JSON.parse threw away the fourteen complete lines that came before the cut.
+ */
+test('a truncated response keeps the lines that did arrive', async () => {
+  const { readLines } = await import('@/lib/gemini/json');
+  const truncated = `{"lines":[
+    {"text":"Settle into a posture that feels steady."},
+    {"text":"Let the eyes close, if that feels right."},
+    {"text":"Notice where the brea`;
+  const got = readLines(truncated);
+  assert.equal(got.length, 2);
+  assert.equal(got[1].text, 'Let the eyes close, if that feels right.');
+});
+
+test('salvage is not used when the JSON is complete', async () => {
+  const { readLines } = await import('@/lib/gemini/json');
+  const whole = '```json\n{"lines":[{"text":"One."},{"text":"Two."},{"text":"Three."}]}\n```';
+  assert.deepEqual(readLines(whole).map((l) => l.text), ['One.', 'Two.', 'Three.']);
+});
+
+test('a brace inside a line does not confuse the walk', async () => {
+  const { readLines } = await import('@/lib/gemini/json');
+  const tricky = '{"lines":[{"text":"A line with a } brace and a \\" quote."},{"text":"Next.';
+  const got = readLines(tricky);
+  assert.equal(got.length, 1);
+  assert.equal(got[0].text, 'A line with a } brace and a " quote.');
+});

@@ -1,4 +1,5 @@
 import { callInteractions, TEXT_MODEL, withRetry } from './client';
+import { readLines } from './json';
 import { validateScript } from '@/lib/affirmations/validator';
 import { targetLineCounts } from '@/lib/script/plan';
 import type {
@@ -346,7 +347,7 @@ const PATTERN_SET = new Set<Pattern>([
   'sensory',
 ]);
 
-function extractText(json: Record<string, unknown>): string {
+export function extractText(json: Record<string, unknown>): string {
   const steps = json.steps as Array<{ content?: Array<Record<string, unknown>> }> | undefined;
   let out = '';
   for (const step of steps ?? []) {
@@ -359,17 +360,9 @@ function extractText(json: Record<string, unknown>): string {
 
 /** Models wrap JSON in fences often enough that stripping them is not optional. */
 export function parseScriptJson(raw: string, goals: Goal[]): Line[] {
-  let s = raw.trim();
-  const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(s);
-  if (fence) s = fence[1].trim();
-  const start = s.indexOf('{');
-  const end = s.lastIndexOf('}');
-  if (start >= 0 && end > start) s = s.slice(start, end + 1);
-
-  const parsed = JSON.parse(s) as { lines?: Array<Record<string, unknown>> };
   const goalIds = new Set(goals.map((g) => g.id));
 
-  return (parsed.lines ?? [])
+  return readLines(raw)
     .map((l, i): Line | null => {
       const text = typeof l.text === 'string' ? l.text.trim() : '';
       if (!text) return null;
