@@ -27,7 +27,9 @@ import type { Section } from '@/lib/types';
  */
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-export const API_KEY_STORAGE = 'nightscript.apikey';
+export const API_KEY_STORAGE = 'sakina.apikey';
+/** Same origin as Nightscript, so a key pasted there can be carried over once. */
+const LEGACY_API_KEY_STORAGE = 'nightscript.apikey';
 
 export class MissingKeyError extends Error {
   constructor() {
@@ -38,7 +40,12 @@ export class MissingKeyError extends Error {
 
 export function getApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
-  return localStorage.getItem(API_KEY_STORAGE) ?? '';
+  const own = localStorage.getItem(API_KEY_STORAGE);
+  if (own) return own;
+  // First run: adopt the key from Nightscript rather than making it be pasted again.
+  const legacy = localStorage.getItem(LEGACY_API_KEY_STORAGE);
+  if (legacy) localStorage.setItem(API_KEY_STORAGE, legacy);
+  return legacy ?? '';
 }
 
 export function setApiKey(key: string): void {

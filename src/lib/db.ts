@@ -40,7 +40,15 @@ interface NightscriptDB extends DBSchema {
   journal: { key: string; value: JournalEntry; indexes: { at: number } };
 }
 
-const DB_NAME = 'nightscript';
+/**
+ * Its own database, deliberately not Nightscript's.
+ *
+ * Both apps are project pages on github.io, and a path does not scope storage — they are the
+ * same origin and would share one IndexedDB. Sakina's schema is a version ahead, so sharing a
+ * name would silently upgrade the database out from under the older app, whose openDB(…, 2)
+ * would then fail with a VersionError on a v3 store. Two apps, two databases.
+ */
+const DB_NAME = 'sakina';
 const DB_VERSION = 3;
 
 /**
