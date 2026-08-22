@@ -18,13 +18,26 @@ import { PRAYER_NAMES, type PrayerDay, type PrayerName } from '@/lib/types';
  * the day, and how am I.
  */
 export default function Today() {
-  const [now, setNow] = useState(() => new Date());
+  /**
+   * Null until mounted, on purpose.
+   *
+   * This page is prerendered at build time, and every visible thing on it is a function of the
+   * current clock and this device's coordinates. Seeding `now` with `new Date()` meant the
+   * build's date and prayer times were baked into the HTML and then replaced on hydration —
+   * React reported the mismatch, and for a moment the page showed a stale day. Rendering
+   * nothing time-dependent until the client has mounted is the honest fix: there genuinely is
+   * no answer to "what time is it" at build time.
+   */
+  const [now, setNow] = useState<Date | null>(null);
   const [day, setDay] = useState<PrayerDay | null>(null);
   const [guidance, setGuidance] = useState<DailyGuidance | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
 
   // A minute is fine: the countdown is informational, not a timer anyone acts on to the second.
   useEffect(() => {
+    // Deferred so the effect body itself sets nothing: the first read of the clock happens in
+    // a microtask, then once a minute after that.
+    queueMicrotask(() => setNow(new Date()));
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
@@ -48,10 +61,12 @@ export default function Today() {
     queueMicrotask(() => void load());
   }, [load]);
 
-  const next = nextPrayer(now);
-  const times = timesFor(now);
-  const slot = slotForNow(now);
-  const dhikr = adhkarFor(slot)[0];
+  // Everything below needs a clock. The skeleton below holds the layout until there is one.
+  const clock = now;
+  const next = clock ? nextPrayer(clock) : null;
+  const times = clock ? timesFor(clock) : null;
+  const slot = clock ? slotForNow(clock) : null;
+  const dhikr = slot ? adhkarFor(slot)[0] : null;
 
   async function mark(name: PrayerName) {
     const current = day?.prayers[name] ?? 'none';
@@ -59,14 +74,27 @@ export default function Today() {
     setDay(await setPrayerState(isoDate(), name, nextState));
   }
 
+  if (!clock || !next || !times || !slot) {
+    // One frame, at most: the placeholders hold the layout so nothing jumps when the clock lands.
+    return (
+      <Page>
+        <div className="animate-pulse space-y-6">
+          <div className="h-10 w-48 rounded-lg" style={{ background: 'var(--bg-raised)' }} />
+          <div className="h-44 rounded-2xl" style={{ background: 'var(--bg-raised)' }} />
+          <div className="h-24 rounded-2xl" style={{ background: 'var(--bg-raised)' }} />
+        </div>
+      </Page>
+    );
+  }
+
   return (
     <Page>
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <p className="text-sm" style={{ color: 'var(--text-faint)' }}>
-            {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+            {clock.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="mt-1 text-3xl font-normal tracking-tight">{greeting(now)}</h1>
+          <h1 className="mt-1 text-3xl font-normal tracking-tight">{greeting(clock)}</h1>
         </div>
         <Link
           href="/settings"
@@ -112,7 +140,7 @@ export default function Today() {
         <ul className="mt-4 flex gap-2">
           {PRAYER_NAMES.map((name) => {
             const state = day?.prayers[name] ?? 'none';
-            const past = times.times[name].getTime() <= now.getTime();
+            const past = times.times[name].getTime() <= clock.getTime();
             const done = state === 'prayed' || state === 'jamaah';
             return (
               <li key={name} className="flex-1">
