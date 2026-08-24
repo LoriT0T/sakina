@@ -21,18 +21,14 @@ export interface SectionSpec {
 }
 
 /** Proportions taken directly from the brief's 60-minute layout. */
+/* The opening section was deleted at the owner's request (2026-08-25): its
+   whole content was "the day is finished" filler — affirmations about nothing
+   he asked for. The track now opens directly in the settling section, and
+   every minute of it is spent on his stated goals. */
 export const ARC: SectionSpec[] = [
   {
-    section: 'arrival',
-    share: 4 / 60,
-    pauseStart: 3,
-    pauseEnd: 3.5,
-    label: 'Opening',
-    purpose: 'The gentlest affirmations. The day is finished.',
-  },
-  {
     section: 'downshift',
-    share: 6 / 60,
+    share: 10 / 60,
     pauseStart: 3,
     pauseEnd: 3.5,
     label: 'Settling',
@@ -339,7 +335,7 @@ export function buildTimeline(
    * is the fallback for the remainder. Without this, a short arrival section ends up with
    * 8-second gaps while the core has 3-second gaps — the opposite of the growing-pause arc.
    */
-  const CYCLING: Section[] = ['arrival', 'downshift', 'core', 'second', 'dissolution'];
+  const CYCLING: Section[] = ['downshift', 'core', 'second', 'dissolution'];
   const MAX_CYCLES = 6;
   /**
    * How far a pause may be scaled from its nominal value to land a section on its budget.

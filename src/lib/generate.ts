@@ -184,17 +184,10 @@ const BATCH_NOTES: Record<WritingStyle, Array<{ section: Section; notes: string[
   // lines. The emphases have to match the style, or the notes fight the rules.
   scripting: [
     {
-      section: 'arrival',
-      notes: [
-        'Gratitude that the day is finished and can be set down.',
-        'The feeling of the bed and of being allowed to stop.',
-      ],
-    },
-    {
       section: 'downshift',
       notes: [
-        'Work downward from jaw and face to the chest.',
-        'Work downward from the stomach to the feet.',
+        'Identity lines drawn from their goals — "I am someone who…", each carrying its goalId.',
+        'Capability lines drawn from their goals — "I can…", each carrying its goalId.',
       ],
     },
     {
@@ -217,18 +210,11 @@ const BATCH_NOTES: Record<WritingStyle, Array<{ section: Section; notes: string[
       section: 'dissolution',
       notes: [
         'Fragments of the life, warm and concrete.',
-        'Fragments of settling and of the day being done.',
+        'Fragments drawn from the goals, at their simplest.',
       ],
     },
   ],
   process: [
-    {
-      section: 'arrival',
-      notes: [
-        'Focus on arriving and putting the day down.',
-        'Focus on breath and on permission to stop listening.',
-      ],
-    },
     {
       section: 'downshift',
       notes: [
@@ -288,7 +274,7 @@ function planScriptRequests(
   return out;
 }
 
-const SECTION_ORDER: Section[] = ['arrival', 'downshift', 'core', 'second', 'dissolution'];
+const SECTION_ORDER: Section[] = ['downshift', 'core', 'second', 'dissolution'];
 
 /** Cap on repair round-trips, so a bad generation cannot fan out into fifty requests. */
 const MAX_REPAIRS = 12;

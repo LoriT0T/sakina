@@ -111,11 +111,13 @@ const SCRIPTING_BRIEF: Record<Exclude<AffirmationSection, 'fade'>, (n: number) =
 being finished and the work being done. No body sensations, no breathing instructions, no scene
 setting. goalId may be null here.`,
 
-  downshift: (n) => `Write ${n} SETTLING lines. Still affirmations, quiet and simple. Lead with
-identity and capability — "I am someone who…", "I can…" — not with gratitude, which the opening
-already used. NO BODY SCAN: nothing about jaws, shoulders, hands, breath or limbs, and nothing
-about sinking, softening or relaxing. If you catch yourself writing a relaxation instruction,
-write an affirmation instead.`,
+  downshift: (n) => `Write ${n} OPENING lines — the track begins here, straight into the
+listener's own material. Quiet, simple affirmations that lead with identity and capability —
+"I am someone who…", "I can…" — EVERY LINE drawn from one of their stated goals and carrying
+that goalId. No lines about the day being finished, the bed, or being allowed to stop: those
+are affirmations about nothing. NO BODY SCAN: nothing about jaws, shoulders, hands, breath or
+limbs, and nothing about sinking, softening or relaxing. If you catch yourself writing a
+relaxation instruction, write an affirmation about one of their goals instead.`,
 
   core: (n) => `Write ${n} CORE lines — the heart of the track.
 
@@ -336,7 +338,7 @@ export function classifyScriptingPattern(text: string, fallback: Pattern): Patte
   return fallback;
 }
 
-const SECTIONS: Section[] = ['arrival', 'downshift', 'core', 'second', 'dissolution'];
+const SECTIONS: Section[] = ['downshift', 'core', 'second', 'dissolution'];
 const PATTERN_SET = new Set<Pattern>([
   'process',
   'evidence',
