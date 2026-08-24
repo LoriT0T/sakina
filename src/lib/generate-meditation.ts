@@ -121,7 +121,24 @@ export async function generateMeditation(
         const key = await chunkKey(chunk.section, chunk.text, settings.voice);
         let pcm = await getCachedChunk(key).catch(() => null);
         if (!pcm) {
-          pcm = await speakDirect(chunk.section, chunk.text, settings.voice, {});
+          /* Same retry discipline as the affirmation path: transient errors
+             back off (honouring the API's own retry hint), permanent ones
+             surface. Without this, one 429 mid-generation killed the whole
+             meditation — at bedtime. */
+          pcm = await (async function attempt(n: number): Promise<Int16Array> {
+            try {
+              return await speakDirect(chunk.section, chunk.text, settings.voice, {});
+            } catch (e) {
+              const msg = (e as Error).message ?? '';
+              const permanent =
+                /API key|api_key|not set|PERMISSION|content_blocked|policy/i.test(msg) || n >= 3;
+              if (permanent) throw e;
+              const hinted = /retry in ([0-9.]+)s/i.exec(msg);
+              const waitMs = hinted ? (Number(hinted[1]) + 1) * 1000 : 1500 * 2 ** n;
+              await new Promise((r) => setTimeout(r, waitMs));
+              return attempt(n + 1);
+            }
+          })(0);
           await putCachedChunk(key, pcm).catch(() => {});
         } else {
           cached++;

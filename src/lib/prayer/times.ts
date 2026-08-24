@@ -22,13 +22,15 @@ export interface PlaceSettings {
 
 const STORAGE = 'sakina.place';
 
-/** Derby, because that is where this is used from. Changeable on the prayer page. */
+/* Kuwait, matching Diwan's default (2026-08-25) — an unset device must not
+   show Derby times here while the hub shows Kuwait. A place saved on the
+   device, or synced from the account, still wins. */
 export const DEFAULT_PLACE: PlaceSettings = {
-  latitude: 52.9225,
-  longitude: -1.4746,
-  label: 'Derby, UK',
-  method: 'MoonsightingCommittee',
-  madhab: 'hanafi',
+  latitude: 29.3759,
+  longitude: 47.9774,
+  label: 'Kuwait City',
+  method: 'Kuwait',
+  madhab: 'shafi',
 };
 
 export function getPlace(): PlaceSettings {

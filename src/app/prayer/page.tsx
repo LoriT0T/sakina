@@ -50,7 +50,13 @@ export default function PrayerPage() {
     const s = slotForNow();
     return s === 'anytime' ? 'after-prayer' : s;
   });
-  const now = new Date();
+  /* `now` is STATE, not a render-time constant. This page is used at night
+     and left open across midnight; a fixed `now` kept showing yesterday's
+     times and yesterday's day while a mark made after 12 wrote to the new
+     date underneath it. A minute tick and a visibility check keep the page
+     honest about which day it is. */
+  const [now, setNow] = useState(() => new Date());
+  const [dayKey, setDayKey] = useState(() => isoDate());
 
   const load = useCallback(async () => {
     setDay(await getPrayerDay(isoDate()));
@@ -60,6 +66,23 @@ export default function PrayerPage() {
   useEffect(() => {
     queueMicrotask(() => void load());
   }, [load]);
+
+  useEffect(() => {
+    const roll = () => {
+      setNow(new Date());
+      const k = isoDate();
+      if (k !== dayKey) {
+        setDayKey(k);
+        void load();
+      }
+    };
+    const t = setInterval(roll, 60_000);
+    document.addEventListener('visibilitychange', roll);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', roll);
+    };
+  }, [dayKey, load]);
 
   const times = timesFor(now, place);
 

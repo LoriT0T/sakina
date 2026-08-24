@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button, Card, Muted, Note, Page, SectionHeading } from '@/components/ui';
 import {
   deleteDraft,
+  pruneChunks,
   deleteTrack,
   getAudio,
   listDrafts,
@@ -43,6 +44,10 @@ export default function LibraryPage() {
        generation now deletes its own draft, so nothing lingers either. */
     setDrafts(await listDrafts());
     setUsage(await storageEstimate());
+    /* Old spoken chunks are a cache, not a record — and a cache that only
+       grows eventually eats the quota the next track needs to save into.
+       Fire-and-forget: the listing never waits on housekeeping. */
+    void pruneChunks().catch(() => {});
   }
 
   useEffect(() => {

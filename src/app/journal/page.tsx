@@ -62,12 +62,19 @@ export default function JournalPage() {
 
   async function save() {
     if (!text.trim()) return;
-    await addJournalEntry({
-      id: newId(),
-      at: Date.now(),
-      prompt: prompt ?? undefined,
-      text: text.trim(),
-    });
+    try {
+      await addJournalEntry({
+        id: newId(),
+        at: Date.now(),
+        prompt: prompt ?? undefined,
+        text: text.trim(),
+      });
+    } catch (e) {
+      /* The entry is still in the box — nothing typed is lost. Losing a
+         journal line silently would be the worst failure this page has. */
+      alert(`Could not save: ${(e as Error).message}. Your text is still here — try again.`);
+      return;
+    }
     setText('');
     setPrompt(null);
     setSaved(true);

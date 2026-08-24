@@ -141,6 +141,14 @@ function tick(): void {
 let timer: ReturnType<typeof setInterval> | null = null;
 
 export function startReminders(): () => void {
+  /* Inside the Diwan iOS shell, notifications have exactly one source: the
+     shell, which schedules prayer times as OS notifications that fire with
+     the app closed. This in-page reminder firing too meant every prayer
+     arrived twice whenever Sakina was open — and a doubled reminder teaches
+     the ear to dismiss both. */
+  if (typeof window !== 'undefined' && (window as unknown as { DIWAN_NATIVE?: number }).DIWAN_NATIVE) {
+    return () => {};
+  }
   if (typeof window === 'undefined') return () => {};
   if (timer !== null) return () => {};
   tick();
