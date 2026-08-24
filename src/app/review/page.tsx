@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Note, Page } from '@/components/ui';
-import { getDraft, openDatabase, saveDraft, saveTrack, newId, type Draft } from '@/lib/db';
+import { deleteDraft, getDraft, openDatabase, saveDraft, saveTrack, newId, type Draft } from '@/lib/db';
 import { generateTrack, writeScript as writeScriptApi, type GenerateProgress } from '@/lib/generate';
 import { generateMeditation, writeMeditation } from '@/lib/generate-meditation';
 import { validateScript } from '@/lib/affirmations/validator';
@@ -154,6 +154,12 @@ function Review() {
         durationSec: result.measurement.durationSec,
       };
       await saveTrack(meta, result.blob);
+      /* The draft's job is done — script and intake are copied into the track
+         itself. Deleting it here (and ONLY here, after the audio is safely
+         stored) is what lets the library show every unfinished draft without
+         finished ones piling up. Any failure above leaves the draft intact,
+         script and all, sitting in the library ready to retry. */
+      await deleteDraft(draft.id);
       router.push(`/play?t=${id}`);
     } catch (e) {
       setError((e as Error).message);

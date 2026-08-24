@@ -37,7 +37,11 @@ export default function LibraryPage() {
       return;
     }
     setTracks(await listTracks());
-    setDrafts((await listDrafts()).filter((d) => !d.script));
+    /* Every draft shows, whatever its state. The old filter hid any draft that
+       had a script — so a written-but-not-yet-generated track looked deleted,
+       at bedtime, which is the one moment this app must never lie. A finished
+       generation now deletes its own draft, so nothing lingers either. */
+    setDrafts(await listDrafts());
     setUsage(await storageEstimate());
   }
 
@@ -124,7 +128,14 @@ export default function LibraryPage() {
                         {d.name}
                       </p>
                       <p className="mt-1 text-xs" style={{ color: 'var(--text-faint)' }}>
-                        {d.settings.minutes} min · never written
+                        {d.settings.minutes} min ·{' '}
+                        {d.script ? (
+                          <span style={{ color: 'var(--accent)' }}>
+                            script written — ready to generate
+                          </span>
+                        ) : (
+                          'goals saved — script not written yet'
+                        )}
                       </p>
                     </Link>
                     <Button
