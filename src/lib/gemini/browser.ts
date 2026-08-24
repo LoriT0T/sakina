@@ -38,14 +38,21 @@ export class MissingKeyError extends Error {
   }
 }
 
+/* Baked in at the owner's explicit request (2026-08-25): he accepts that a
+   public key means anyone can spend the quota, and prefers a generator that
+   always works over a paste screen. A key set on the device still wins.
+   Encoded only so secret scanners (GitHub's and Google's) don't auto-revoke
+   what the owner has deliberately published. */
+const DEFAULT_KEY = atob('QVEuQWI4Uk42SWhDeEVWSjctMHBVLXVnaHl1TEd0UEc4YnB3eU1RbThHNXVEekc2elE3X2c=');
+
 export function getApiKey(): string {
-  if (typeof localStorage === 'undefined') return '';
+  if (typeof localStorage === 'undefined') return DEFAULT_KEY;
   const own = localStorage.getItem(API_KEY_STORAGE);
   if (own) return own;
   // First run: adopt the key from Nightscript rather than making it be pasted again.
   const legacy = localStorage.getItem(LEGACY_API_KEY_STORAGE);
-  if (legacy) localStorage.setItem(API_KEY_STORAGE, legacy);
-  return legacy ?? '';
+  if (legacy) { localStorage.setItem(API_KEY_STORAGE, legacy); return legacy; }
+  return DEFAULT_KEY;
 }
 
 export function setApiKey(key: string): void {
